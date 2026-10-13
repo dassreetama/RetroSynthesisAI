@@ -1,0 +1,18 @@
+
+.venv/
+__pycache__/
+*.py[cod]
+.env
+
+# Datasets and generated predictions
+data/
+*.csv
+
+# Model checkpoints
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+
+# Notebook cache
+.ipynb_checkpoints/
