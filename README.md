@@ -8,6 +8,46 @@ RetroSynthesisAI is a machine learning project exploring the prediction of react
 
 Retrosynthesis is an important task in computational chemistry and drug discovery because it helps researchers explore possible starting materials for synthesizing a target molecule.
 
+## Project Architecture
+
+![RetroSynthesisAI Architecture](images/retro_synthesis_architecture.svg)
+
+## System Architecture
+
+The following workflow illustrates the main stages of the project, from reaction data processing to reactant prediction and evaluation.
+
+```mermaid
+flowchart TD
+    A["Reaction Dataset<br/>Product and Reactant SMILES"]
+    B["Data Inspection and Preprocessing"]
+    C["Training / Validation / Test Splits"]
+
+    A --> B
+    B --> C
+    C --> D["Baseline Prediction"]
+    C --> E["Character-Level Transformer<br/>PyTorch"]
+
+    E --> F["Model Training"]
+    F --> G["Greedy Decoding"]
+    G --> H["Predicted Reactant SMILES"]
+
+    D --> I["Evaluation"]
+    H --> I
+
+    I --> J["RDKit SMILES Validation"]
+    I --> K["Exact-Match Evaluation"]
+    I --> L["Baseline Comparison"]
+
+    J --> M["Results and Limitations"]
+    K --> M
+    L --> M
+
+    style A fill:#dbeafe,stroke:#2563eb,color:#111827
+    style E fill:#dcfce7,stroke:#16a34a,color:#111827
+    style H fill:#fef3c7,stroke:#d97706,color:#111827
+    style M fill:#ede9fe,stroke:#7c3aed,color:#111827
+```
+
 ## Objectives
 
 - Process and inspect reaction datasets.
@@ -29,6 +69,8 @@ Retrosynthesis is an important task in computational chemistry and drug discover
 
 ```text
 RetroSynthesisAI/
+├── images/
+│   └── retro_synthesis_architecture.png
 ├── src/
 │   ├── audit_baseline.py
 │   ├── baseline.py
@@ -59,7 +101,7 @@ The processed dataset contains the following numbers of reactions:
 
 The dataset contains product SMILES and corresponding reactant SMILES. Dataset files are stored locally and are not committed to this repository.
 
-An initial exact-string overlap audit identified 62 shared product strings between training and validation and 69 between training and test. These findings should be considered when interpreting evaluation results; canonicalized molecular overlap has not been established by this audit.
+An initial exact-string overlap audit identified 62 shared product strings between training and validation and 69 between training and test. These findings should be considered when interpreting evaluation results. Canonicalized molecular overlap has not been established by this audit.
 
 ## Models
 
@@ -71,7 +113,7 @@ A candidate-based baseline was evaluated on the 5,007-row test set. Its top-1 ex
 
 An experimental sequence-to-sequence Transformer was implemented in PyTorch. It uses character-level SMILES tokens, positional encoding, teacher forcing during training, and greedy decoding during evaluation.
 
-The initial local experiment used 1,000 training reactions and 200 validation reactions for five epochs. The best recorded validation loss was 1.4996. A separate evaluation then assessed the first 32 rows of the validation file.
+The initial local experiment used 1,000 training reactions and 200 validation reactions for five epochs. The best recorded validation loss was 1.4996. A separate evaluation assessed the first 32 rows of the validation file.
 
 ## Experimental Results
 
@@ -108,14 +150,14 @@ Canonical reactant-set accuracy has not yet been established for the reported Tr
 
 ## Getting Started
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/dassreetama/RetroSynthesisAI.git
 cd RetroSynthesisAI
 ```
 
-### 2. Create a virtual environment
+### 2. Create a Virtual Environment
 
 On Windows PowerShell:
 
@@ -124,7 +166,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-### 3. Install dependencies
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -132,11 +174,11 @@ pip install -r requirements.txt
 
 RDKit and PyTorch must be installed successfully for the chemical validation and Transformer workflows.
 
-### 4. Prepare the dataset
+### 4. Prepare the Dataset
 
 Obtain the dataset from its original provider, follow its access conditions and license, and place the processed files in the expected `data/processed/` directory.
 
-### 5. Run the Transformer experiment
+### 5. Run the Transformer Experiment
 
 From the repository root:
 
@@ -144,7 +186,7 @@ From the repository root:
 python src/train_transformer.py
 ```
 
-### 6. Evaluate the saved Transformer checkpoint
+### 6. Evaluate the Saved Transformer Checkpoint
 
 ```bash
 python src/evaluate.py
