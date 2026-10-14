@@ -3,56 +3,63 @@ from pathlib import Path
 import pandas as pd
 from rdkit import Chem
 
-DATA_DIR = Path("data")
-REACTION_COLUMN = "reactants>reagents>production"
+DATA_DIR = Path("data/processed")
 
-for split in ["train", "val", "test"]:
-    path = DATA_DIR / f"raw_{split}.csv"
+def check_split(split):
+    path = DATA_DIR / f"{split}.csv"
+
+    if not path.exists():
+        print(f"\n{split.upper()}: FILE NOT FOUND — {path}")
+        return
+
     df = pd.read_csv(path)
-
-    print(f"\n{'=' * 55}")
+    print(f"\n{'=' * 50}")
     print(f"Split: {split}")
     print(f"Rows: {len(df)}")
-    print("Reaction classes:")
-    print(df["class"].value_counts(dropna=False).head(15))
+    print(f"Columns: {list(df.columns)}")
 
-    valid_reactions = 0
+    required = {"product_smiles", "reactants_smiles"}
+    if not required.issubset(df.columns):
+        print("ERROR: Required SMILES columns are missing.")
+        return
+
+    missing_products = df["product_smiles"].isna().sum()
+    missing_reactants = df["reactants_smiles"].isna().sum()
+
+    print(f"Missing products: {missing_products}")
+    print(f"Missing reactants: {missing_reactants}")
+
     valid_products = 0
-    invalid_products = 0
-    malformed = 0
+    valid_reactants = 0
+    valid_reactions = 0
 
-    for reaction in df[REACTION_COLUMN].dropna():
-        # Standard reaction SMILES: reactants>>product
-        parts = str(reaction).split(">>")
+    for product, reactants in zip(
+        df["product_smiles"], df["reactants_smiles"]
+    ):
+        product_ok = (
+            isinstance(product, str)
+            and Chem.MolFromSmiles(product) is not None
+        )
 
-        if len(parts) != 2:
-            malformed += 1
-            continue
+        # Each dot-separated component must parse.
+        reactant_ok = (
+            isinstance(reactants, str)
+            and bool(reactants.strip())
+            and all(
+                Chem.MolFromSmiles(part) is not None
+                for part in reactants.split(".")
+            )
+        )
 
-        reactants, product = parts
+        valid_products += int(product_ok)
+        valid_reactants += int(reactant_ok)
+        valid_reactions += int(product_ok and reactant_ok)
 
-        product_mol = Chem.MolFromSmiles(product)
-        if product_mol is not None:
-            valid_products += 1
-        else:
-            invalid_products += 1
+    print(f"Valid products: {valid_products}/{len(df)}")
+    print(f"Valid reactant strings: {valid_reactants}/{len(df)}")
+    print(f"Fully valid reactions: {valid_reactions}/{len(df)}")
 
-        reactant_mols = [
-            Chem.MolFromSmiles(s)
-            for s in reactants.split(".")
-            if s.strip()
-        ]
+for split in ["train", "val", "test"]:
+    check_split(split)
 
-        if (
-            product_mol is not None
-            and reactant_mols
-            and all(mol is not None for mol in reactant_mols)
-        ):
-            valid_reactions += 1
-
-    print("Valid products:", valid_products)
-    print("Invalid products:", invalid_products)
-    print("Fully valid reactions:", valid_reactions)
-    print("Malformed reaction strings:", malformed)
-
-print("\nValidation finished.")
+print("\nDataset validation finished.")
